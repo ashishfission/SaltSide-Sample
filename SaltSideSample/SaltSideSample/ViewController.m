@@ -12,6 +12,8 @@
 @interface ViewController ()<UITableViewDelegate,UITableViewDataSource>
 @property (weak, nonatomic) IBOutlet UITableView *feedTableView;
 @property (nonatomic, strong)NSArray *dataArray;
+@property (weak, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
+
 @end
 
 @implementation ViewController
@@ -20,9 +22,18 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
     self.title = @"Feed";
-
+    
+    if (_dataArray.count == 0) {
+        [_activityIndicator startAnimating];
+        _feedTableView.hidden = true;
+    }
+    else{
+        [_activityIndicator stopAnimating];
+        _feedTableView.hidden = false;
+    }
     [self downloadJson];
 }
+
 
 #pragma mark - API Call
 
@@ -37,19 +48,22 @@
                                   ^(NSData *data, NSURLResponse *response, NSError *error) {
                                       // ...
                                       
-                                      NSError *erro;
-                                      
-                                      self.dataArray = [NSJSONSerialization JSONObjectWithData:data options:0 error:&erro];
-                                     // NSLog(@"*****count*****  %i",self.dataArray.count);
-                                dispatch_async(dispatch_get_main_queue(), ^{
-                                    [self.feedTableView reloadData];
-
-                                });
+                                      if (error == nil){
+                                          NSError *jsonParseError;
+                                          
+                                          self.dataArray = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonParseError];
+                                          dispatch_async(dispatch_get_main_queue(), ^{
+                                              [_activityIndicator stopAnimating];
+                                              _feedTableView.hidden = false;
+                                              [self.feedTableView reloadData];
+                                              
+                                          });
+                                      }
                                       
                                   }];
     
     [task resume];
-
+    
 }
 
 
